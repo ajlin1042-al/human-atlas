@@ -1,0 +1,82 @@
+[
+  {
+    "id": "FJ1931",
+    "conceptId": "FMA87217",
+    "name": "descending thoracic aorta",
+    "system": "arteries",
+    "side": "midline",
+    "meshFile": "/anatomy/FJ1931.glb"
+  },
+  {
+    "id": "FJ2723",
+    "conceptId": "FMA3802",
+    "name": "trunk of right coronary artery",
+    "system": "heart",
+    "side": "right",
+    "meshFile": "/anatomy/FJ2723.glb"
+  },
+  {
+    "id": "FJ1654",
+    "conceptId": "FMA50029",
+    "name": "right anterior cerebral artery",
+    "system": "nervous system",
+    "side": "right",
+    "meshFile": "/anatomy/FJ1654.glb"
+  },
+  {
+    "id": "FJ2703",
+    "conceptId": "FMA4708",
+    "name": "left marginal vein",
+    "system": "veins",
+    "side": "left",
+    "meshFile": "/anatomy/FJ2703.glb"
+  },
+  {
+    "id": "FJ2563",
+    "conceptId": "FMA7131",
+    "name": "esophagus",
+    "system": "other organs",
+    "side": "midline",
+    "meshFile": "/anatomy/FJ2563.glb"
+  },
+  {
+    "id": "FJ1252",
+    "conceptId": "FMA54397",
+    "name": "upper jaw",
+    "system": "skeleton",
+    "side": "midline",
+    "meshFile": "/anatomy/FJ1252.glb"
+  },
+  {
+    "id": "FJ2741",
+    "conceptId": "FMA46729",
+    "name": "left levator veli palatini",
+    "system": "muscles",
+    "side": "left",
+    "meshFile": "/anatomy/FJ2741.glb"
+  },
+  {
+    "id": "FJ2761",
+    "conceptId": "FMA54640",
+    "name": "tongue",
+    "system": "sensory organs",
+    "side": "midline",
+    "meshFile": "/anatomy/FJ2761.glb"
+  },
+  {
+    "id": "FJ2441",
+    "conceptId": "FMA68227",
+    "name": "inferior lingular bronchial tree",
+    "system": "respiratory",
+    "side": "midline",
+    "meshFile": "/anatomy/FJ2441.glb"
+  },
+  {
+    "id": "FJ1932",
+    "conceptId": "FMA3789",
+    "name": "abdominal aorta",
+    "system": "arteries",
+    "side": "midline",
+    "meshFile": "/anatomy/FJ1932.glb"
+  }
+]

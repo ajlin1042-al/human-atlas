@@ -4,7 +4,7 @@ import obj2gltf from 'obj2gltf'
 
 const objDir = 'assets/anatomy/raw/partof_BP3D_4.0_obj_99'
 const outDir = 'public/anatomy'
-const LIMIT = 10 // test batch only
+const LIMIT = Infinity // test batch only
 
 fs.mkdirSync(outDir, { recursive: true })
 
@@ -39,5 +39,5 @@ for (const p of picked) {
   console.log('converted', p.id, p.name, `(${p.system})`)
 }
 
-fs.writeFileSync(path.join(outDir, 'manifest-test.json'), JSON.stringify(manifest, null, 2))
+fs.writeFileSync(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
 console.log('done:', manifest.length, 'parts')

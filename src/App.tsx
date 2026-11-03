@@ -37,7 +37,7 @@ export default function App() {
   const [parts, setParts] = useState<Part[]>([])
 
   useEffect(() => {
-    fetch('/anatomy/manifest-test.json')
+    fetch('/anatomy/manifest.json')
       .then((r) => r.json())
       .then(setParts)
   }, [])

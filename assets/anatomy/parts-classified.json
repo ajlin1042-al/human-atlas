@@ -2940,10 +2940,38 @@
     "side": "midline"
   },
   {
+    "id": "FJ3397",
+    "conceptId": "FMA16549",
+    "name": "mesoappendix",
+    "system": "other organs",
+    "side": "midline"
+  },
+  {
+    "id": "FJ3398",
+    "conceptId": "FMA14647",
+    "name": "transverse mesocolon",
+    "system": "other organs",
+    "side": "midline"
+  },
+  {
     "id": "FJ1282",
     "conceptId": "FMA58082",
     "name": "anterior chamber of left eyeball",
     "system": "sensory organs",
+    "side": "left"
+  },
+  {
+    "id": "FJ1285",
+    "conceptId": "FMA58300",
+    "name": "left choroid",
+    "system": "other organs",
+    "side": "left"
+  },
+  {
+    "id": "FJ1286",
+    "conceptId": "FMA58300",
+    "name": "left choroid",
+    "system": "other organs",
     "side": "left"
   },
   {
@@ -2957,6 +2985,13 @@
     "id": "FJ1294",
     "conceptId": "FMA49051",
     "name": "left inferior oblique",
+    "system": "muscles",
+    "side": "left"
+  },
+  {
+    "id": "FJ1295",
+    "conceptId": "FMA49047",
+    "name": "left inferior rectus",
     "system": "muscles",
     "side": "left"
   },
@@ -2996,6 +3031,13 @@
     "side": "left"
   },
   {
+    "id": "FJ1304",
+    "conceptId": "FMA49055",
+    "name": "left lateral rectus",
+    "system": "muscles",
+    "side": "left"
+  },
+  {
     "id": "FJ1305",
     "conceptId": "FMA58243",
     "name": "left lens",
@@ -3006,6 +3048,13 @@
     "id": "FJ1306",
     "conceptId": "FMA49049",
     "name": "left levator palpebrae superioris",
+    "system": "muscles",
+    "side": "left"
+  },
+  {
+    "id": "FJ1308",
+    "conceptId": "FMA49057",
+    "name": "left medial rectus",
     "system": "muscles",
     "side": "left"
   },
@@ -3038,6 +3087,13 @@
     "side": "left"
   },
   {
+    "id": "FJ1323",
+    "conceptId": "FMA49045",
+    "name": "left superior rectus",
+    "system": "muscles",
+    "side": "left"
+  },
+  {
     "id": "FJ1324",
     "conceptId": "FMA59092",
     "name": "tarsal plate of left upper eyelid",
@@ -3052,6 +3108,20 @@
     "side": "left"
   },
   {
+    "id": "FJ1336",
+    "conceptId": "FMA58299",
+    "name": "right choroid",
+    "system": "other organs",
+    "side": "right"
+  },
+  {
+    "id": "FJ1337",
+    "conceptId": "FMA58299",
+    "name": "right choroid",
+    "system": "other organs",
+    "side": "right"
+  },
+  {
     "id": "FJ1340",
     "conceptId": "FMA58239",
     "name": "right cornea",
@@ -3062,6 +3132,13 @@
     "id": "FJ1345",
     "conceptId": "FMA49050",
     "name": "right inferior oblique",
+    "system": "muscles",
+    "side": "right"
+  },
+  {
+    "id": "FJ1346",
+    "conceptId": "FMA49046",
+    "name": "right inferior rectus",
     "system": "muscles",
     "side": "right"
   },
@@ -3101,6 +3178,13 @@
     "side": "right"
   },
   {
+    "id": "FJ1355",
+    "conceptId": "FMA49054",
+    "name": "right lateral rectus",
+    "system": "muscles",
+    "side": "right"
+  },
+  {
     "id": "FJ1356",
     "conceptId": "FMA58242",
     "name": "right lens",
@@ -3111,6 +3195,13 @@
     "id": "FJ1357",
     "conceptId": "FMA49048",
     "name": "right levator palpebrae superioris",
+    "system": "muscles",
+    "side": "right"
+  },
+  {
+    "id": "FJ1359",
+    "conceptId": "FMA49056",
+    "name": "right medial rectus",
     "system": "muscles",
     "side": "right"
   },
@@ -3139,6 +3230,13 @@
     "id": "FJ1373",
     "conceptId": "FMA49052",
     "name": "right superior oblique",
+    "system": "muscles",
+    "side": "right"
+  },
+  {
+    "id": "FJ1374",
+    "conceptId": "FMA49044",
+    "name": "right superior rectus",
     "system": "muscles",
     "side": "right"
   },

@@ -1,54 +1,28 @@
-# React + TypeScript + Vite
+# Human Atlas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive 3D anatomy explorer. Rotate the body, toggle anatomical systems, search any structure, and drag one slider to pull the whole body apart into an organized specimen atlas.
 
-Currently, two official plugins are available:
+**Live demo:** (https://human-atlas-ivory-delta.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- Full-screen 3D human body with smooth orbit, pan and zoom
+- 9 toggleable systems: skeleton, muscles, heart, sensory organs, arteries, veins, nervous system, respiratory, and other organs
+- Explode slider that moves every piece from the assembled body into a catalogued atlas layout, with every piece still clickable
+- Hover labels, an information panel, and isolate mode for any structure
+- Search that flies the camera straight to a structure (try "gracilis")
+- Specimen collections (hand, shoulder, thigh, foot, heart, brain) with left/right filtering
+- Camera toolbar: zoom, front view, orbit/pan modes, reset, fullscreen
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+React, TypeScript, Vite, Three.js, @react-three/fiber, @react-three/drei
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## How it works
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Data pipeline:** raw BodyParts3D OBJ files are matched to English names, classified into systems with rule-based scripts, converted to compressed GLB files, and listed in a manifest (`scripts/`).
+- **Rendering:** each piece is loaded separately and animated inside the Three.js render loop, so React state is never updated per frame.
+- **Explode view:** the app measures every piece's bounding box, packs the pieces into rows (largest at the top), and interpolates each piece between its assembled and atlas positions using one eased slider value.
+- **Camera focus:** the camera flies to a structure by computing its bounding box and tweening position and target.
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Run it locally

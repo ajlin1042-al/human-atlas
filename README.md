@@ -2,7 +2,7 @@
 
 An interactive 3D anatomy explorer. Rotate the body, toggle anatomical systems, search any structure, and drag one slider to pull the whole body apart into an organized specimen atlas.
 
-**Live demo:** (https://human-atlas-ivory-delta.vercel.app)
+**Live demo:** https://human-atlas-ivory-delta.vercel.app
 
 ## Features
 

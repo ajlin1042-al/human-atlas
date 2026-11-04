@@ -474,6 +474,7 @@ export default function App() {
   const [region, setRegion] = useState<string | null>(null)
   const [side, setSide] = useState<Side>('both')
   const [collectionsOpen, setCollectionsOpen] = useState(true)
+  const [systemsOpen, setSystemsOpen] = useState(true)
   const explodeRef = useRef(0)
   const searchRef = useRef<HTMLInputElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -766,43 +767,73 @@ export default function App() {
       >
         {/* Systems panel */}
         <div style={{ ...card, padding: 12, flexShrink: 0 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Systems</div>
-          {SYSTEMS.map((s) => (
-            <div
-              key={s}
-              style={{ display: 'flex', alignItems: 'center', height: 30, gap: 8 }}
-            >
-              <span
-                style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[s] }}
-              />
-              <span style={{ flex: 1, textTransform: 'capitalize' }}>{s}</span>
-              <span style={{ color: '#8a8f93', fontSize: 11 }}>{counts[s] ?? 0}</span>
-              <Toggle on={on[s]} onClick={() => setOn({ ...on, [s]: !on[s] })} />
-            </div>
-          ))}
           <div
+            onClick={() => setSystemsOpen(!systemsOpen)}
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              marginTop: 8,
-              paddingTop: 8,
-              borderTop: '1px solid rgba(0,0,0,0.06)',
-              color: '#8a8f93',
+              alignItems: 'center',
+              cursor: 'pointer',
+              marginBottom: systemsOpen ? 8 : 0,
             }}
           >
-            <span>
-              {visibleCount} visible · loaded {loaded}/{total}
-            </span>
-            <span
-              style={{ cursor: 'pointer', color: '#13242D' }}
-              onClick={() => {
-                setRegion(null)
-                setAll(false)
-              }}
-            >
-              Hide all
+            <span style={{ fontWeight: 600 }}>Systems</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {!systemsOpen && (
+                <span style={{ color: '#8a8f93', fontSize: 11 }}>{visibleCount} visible</span>
+              )}
+              <span
+                style={{
+                  color: '#8a8f93',
+                  display: 'inline-block',
+                  transition: 'transform 200ms',
+                  transform: systemsOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                }}
+              >
+                ▾
+              </span>
             </span>
           </div>
+          {systemsOpen && (
+            <>
+              {SYSTEMS.map((s) => (
+                <div
+                  key={s}
+                  style={{ display: 'flex', alignItems: 'center', height: 30, gap: 8 }}
+                >
+                  <span
+                    style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[s] }}
+                  />
+                  <span style={{ flex: 1, textTransform: 'capitalize' }}>{s}</span>
+                  <span style={{ color: '#8a8f93', fontSize: 11 }}>{counts[s] ?? 0}</span>
+                  <Toggle on={on[s]} onClick={() => setOn({ ...on, [s]: !on[s] })} />
+                </div>
+              ))}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: '1px solid rgba(0,0,0,0.06)',
+                  color: '#8a8f93',
+                }}
+              >
+                <span>
+                  {visibleCount} visible · loaded {loaded}/{total}
+                </span>
+                <span
+                  style={{ cursor: 'pointer', color: '#13242D' }}
+                  onClick={() => {
+                    setRegion(null)
+                    setAll(false)
+                  }}
+                >
+                  Hide all
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Specimen collections panel */}

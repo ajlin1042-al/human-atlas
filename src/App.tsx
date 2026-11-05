@@ -24,6 +24,9 @@ type Part = {
 type Focus = { id: string | null; ids?: string[]; nonce: number }
 type Registry = MutableRefObject<Map<string, THREE.Object3D>>
 type Side = 'both' | 'left' | 'right'
+type Tool = 'orbit' | 'pan'
+type CamCmd = 'in' | 'out' | 'front'
+type CommandRef = MutableRefObject<((cmd: CamCmd) => void) | null>
 
 const SYSTEMS = [
   'skeleton',
@@ -36,6 +39,8 @@ const SYSTEMS = [
   'respiratory',
   'other organs',
 ]
+
+const ORGAN_SYSTEMS = ['heart', 'sensory organs', 'respiratory', 'other organs']
 
 const COLORS: Record<string, string> = {
   arteries: '#c0504d',
@@ -128,11 +133,56 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   }
 }
 
-/* Smooth camera fly-to (a piece, a group of pieces, or back home). */
-function CameraRig({ focus, registry }: { focus: Focus; registry: Registry }) {
+/* Smooth camera moves: fly to a piece/group/home, zoom, front view, and orbit/pan mode. */
+function CameraRig({
+  focus,
+  registry,
+  commandRef,
+  tool,
+}: {
+  focus: Focus
+  registry: Registry
+  commandRef: CommandRef
+  tool: Tool
+}) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const controls = useThree((s) => s.controls) as any
   const tween = useRef<any>(null)
+
+  // orbit mode vs pan mode: what the left mouse button / one finger does
+  useEffect(() => {
+    if (!controls) return
+    controls.mouseButtons = {
+      LEFT: tool === 'pan' ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.PAN,
+    }
+    controls.touches = {
+      ONE: tool === 'pan' ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN,
+    }
+  }, [controls, tool])
+
+  // toolbar commands: zoom in, zoom out, front view
+  useEffect(() => {
+    commandRef.current = (cmd: CamCmd) => {
+      if (!controls) return
+      const target = controls.target.clone() as THREE.Vector3
+      const offset = camera.position.clone().sub(target)
+      const dist = offset.length()
+      let endPos: THREE.Vector3
+      if (cmd === 'in') endPos = target.clone().add(offset.multiplyScalar(0.65))
+      else if (cmd === 'out') endPos = target.clone().add(offset.multiplyScalar(1.5))
+      else endPos = target.clone().add(new THREE.Vector3(0, 0, dist))
+      tween.current = {
+        t: 0,
+        fromPos: camera.position.clone(),
+        fromTarget: target.clone(),
+        endPos,
+        endTarget: target,
+      }
+    }
+  }, [camera, controls, commandRef])
 
   useEffect(() => {
     if (!controls || focus.nonce === 0) return
@@ -140,7 +190,6 @@ function CameraRig({ focus, registry }: { focus: Focus; registry: Registry }) {
     let endTarget: THREE.Vector3
 
     if (focus.ids) {
-      // frame a whole group (a region)
       const box = new THREE.Box3()
       for (const id of focus.ids) {
         const obj = registry.current.get(id)
@@ -152,7 +201,6 @@ function CameraRig({ focus, registry }: { focus: Focus; registry: Registry }) {
       const maxDim = Math.max(size.x, size.y, size.z)
       const fovRad = (camera.fov * Math.PI) / 180
       const dist = Math.max((maxDim / (2 * Math.tan(fovRad / 2))) * 1.6, 0.3)
-      // look at the front of the body
       const dir = new THREE.Vector3(0, 0.1, 1).normalize()
       endTarget = center
       endPos = center.clone().add(dir.multiplyScalar(dist))
@@ -458,6 +506,44 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+function ToolButton({
+  label,
+  title,
+  active,
+  onClick,
+}: {
+  label: string
+  title: string
+  active?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      style={{
+        width: 32,
+        height: 32,
+        border: 'none',
+        borderRadius: 8,
+        cursor: 'pointer',
+        fontSize: 15,
+        background: active ? '#13242D' : 'transparent',
+        color: active ? '#fff' : '#13242D',
+        transition: 'background 150ms',
+      }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.background = '#efefec'
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.background = 'transparent'
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
 export default function App() {
   const [parts, setParts] = useState<Part[]>([])
   const [on, setOn] = useState<Record<string, boolean>>(
@@ -475,9 +561,12 @@ export default function App() {
   const [side, setSide] = useState<Side>('both')
   const [collectionsOpen, setCollectionsOpen] = useState(true)
   const [systemsOpen, setSystemsOpen] = useState(true)
+  const [tool, setTool] = useState<Tool>('orbit')
+  const [fullscreen, setFullscreen] = useState(false)
   const explodeRef = useRef(0)
   const searchRef = useRef<HTMLInputElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
+  const commandRef = useRef<((cmd: CamCmd) => void) | null>(null)
   const registry = useRef<Map<string, THREE.Object3D>>(new Map())
   const { loaded, total } = useProgress()
 
@@ -501,6 +590,18 @@ export default function App() {
     window.addEventListener('pointermove', move)
     return () => window.removeEventListener('pointermove', move)
   }, [])
+
+  // keep the fullscreen button in sync (also when the user presses Esc)
+  useEffect(() => {
+    const onFs = () => setFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFs)
+    return () => document.removeEventListener('fullscreenchange', onFs)
+  }, [])
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen()
+    else document.documentElement.requestFullscreen()
+  }
 
   const select = useCallback((p: Part | null) => {
     setSelected(p)
@@ -532,6 +633,9 @@ export default function App() {
       if (e.key === '/' && !typing) {
         e.preventDefault()
         searchRef.current?.focus()
+      }
+      if ((e.key === 'f' || e.key === 'F') && !typing && !e.ctrlKey && !e.metaKey) {
+        commandRef.current?.('front')
       }
       if (e.key === 'Escape') {
         setQuery('')
@@ -594,6 +698,37 @@ export default function App() {
     goHome()
   }
 
+  /* ---------- Systems presets ---------- */
+  const preset = (name: 'all' | 'skeleton' | 'organs') => {
+    setRegion(null)
+    setOn(
+      Object.fromEntries(
+        SYSTEMS.map((s) => [
+          s,
+          name === 'all'
+            ? true
+            : name === 'skeleton'
+              ? s === 'skeleton'
+              : ORGAN_SYSTEMS.includes(s),
+        ])
+      )
+    )
+  }
+
+  const activePreset = (() => {
+    const onList = SYSTEMS.filter((s) => on[s])
+    if (onList.length === SYSTEMS.length) return 'all'
+    if (onList.length === 1 && onList[0] === 'skeleton') return 'skeleton'
+    if (
+      onList.length === ORGAN_SYSTEMS.length &&
+      ORGAN_SYSTEMS.every((s) => on[s])
+    )
+      return 'organs'
+    return null
+  })()
+
+  const onCount = SYSTEMS.filter((s) => on[s]).length
+
   const counts = useMemo(() => {
     const c: Record<string, number> = {}
     for (const p of parts) c[p.system] = (c[p.system] || 0) + 1
@@ -644,7 +779,12 @@ export default function App() {
           target={[0, 1, 0]}
         />
         <ExplodeRig explodeRef={explodeRef} registry={registry} />
-        <CameraRig focus={focus} registry={registry} />
+        <CameraRig
+          focus={focus}
+          registry={registry}
+          commandRef={commandRef}
+          tool={tool}
+        />
       </Canvas>
 
       {/* Branding */}
@@ -750,6 +890,37 @@ export default function App() {
         )}
       </div>
 
+      {/* Camera toolbar (right edge, vertically centered) */}
+      <div
+        style={{
+          ...card,
+          position: 'absolute',
+          right: 20,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          padding: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          zIndex: 5,
+        }}
+      >
+        <ToolButton label="+" title="Zoom in" onClick={() => commandRef.current?.('in')} />
+        <ToolButton label="F" title="Front view (F)" onClick={() => commandRef.current?.('front')} />
+        <ToolButton label="−" title="Zoom out" onClick={() => commandRef.current?.('out')} />
+        <div style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '2px 4px' }} />
+        <ToolButton label="⟳" title="Orbit mode" active={tool === 'orbit'} onClick={() => setTool('orbit')} />
+        <ToolButton label="✥" title="Pan mode" active={tool === 'pan'} onClick={() => setTool('pan')} />
+        <div style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '2px 4px' }} />
+        <ToolButton label="↺" title="Reset camera" onClick={resetView} />
+        <ToolButton
+          label={fullscreen ? '✕' : '⛶'}
+          title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          active={fullscreen}
+          onClick={toggleFullscreen}
+        />
+      </div>
+
       {/* Left column: Systems + Specimen collections */}
       <div
         style={{
@@ -777,7 +948,20 @@ export default function App() {
               marginBottom: systemsOpen ? 8 : 0,
             }}
           >
-            <span style={{ fontWeight: 600 }}>Systems</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontWeight: 600 }}>Systems</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: '#8a8f93',
+                  background: '#efefec',
+                  borderRadius: 6,
+                  padding: '1px 6px',
+                }}
+              >
+                {onCount}/{SYSTEMS.length}
+              </span>
+            </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {!systemsOpen && (
                 <span style={{ color: '#8a8f93', fontSize: 11 }}>{visibleCount} visible</span>
@@ -796,6 +980,43 @@ export default function App() {
           </div>
           {systemsOpen && (
             <>
+              {/* presets */}
+              <div
+                style={{
+                  display: 'flex',
+                  background: '#efefec',
+                  borderRadius: 8,
+                  padding: 2,
+                  marginBottom: 6,
+                }}
+              >
+                {(
+                  [
+                    ['all', 'All'],
+                    ['skeleton', 'Skeleton'],
+                    ['organs', 'Organs'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div
+                    key={key}
+                    onClick={() => preset(key)}
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      padding: '4px 0',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: 11,
+                      background: activePreset === key ? '#13242D' : 'transparent',
+                      color: activePreset === key ? '#fff' : '#13242D',
+                      transition: 'background 150ms',
+                    }}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+
               {SYSTEMS.map((s) => (
                 <div
                   key={s}
@@ -931,9 +1152,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* Info panel */}
+      {/* Info panel (moved left a little so it clears the toolbar) */}
       {selected && (
-        <div style={{ ...card, position: 'absolute', right: 24, top: 140, width: 280, padding: 16 }}>
+        <div style={{ ...card, position: 'absolute', right: 76, top: 140, width: 280, padding: 16 }}>
           <div style={{ fontSize: 10, letterSpacing: 1.5, color: '#8a8f93' }}>
             {(CATEGORY[selected.system] ?? 'Structure').toUpperCase()}
           </div>

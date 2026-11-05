@@ -13,6 +13,7 @@ import {
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, useProgress } from '@react-three/drei'
 import * as THREE from 'three'
+import { NOTES } from './notes'
 
 type Part = {
   id: string
@@ -106,6 +107,18 @@ function sideOk(side: Side, p: Part): boolean {
 
 function regionPieces(parts: Part[], region: string, side: Side): Part[] {
   return parts.filter((p) => matchRegion(region, p) && sideOk(side, p))
+}
+
+/* Facts for the bubble, taken only from the piece's own data */
+function sideOf(p: Part): string {
+  const n = p.name.toLowerCase()
+  if (/\bleft\b/.test(n)) return 'Left'
+  if (/\bright\b/.test(n)) return 'Right'
+  return 'Midline'
+}
+
+function regionOf(p: Part): string | null {
+  return REGIONS.find((r) => matchRegion(r, p)) ?? null
 }
 
 const HOME_POS = new THREE.Vector3(0, 1.1, 4)
@@ -371,6 +384,82 @@ function ExplodeRig({
   return null
 }
 
+/* Keeps the info bubble beside the isolated piece (never on top of it).
+   Runs in the render loop and moves the bubble with direct style updates,
+   so React state is not touched every frame. */
+function BubbleTracker({
+  id,
+  registry,
+  bubbleRef,
+  lineRef,
+}: {
+  id: string
+  registry: Registry
+  bubbleRef: { current: HTMLDivElement | null }
+  lineRef: { current: SVGLineElement | null }
+}) {
+  const box = useRef(new THREE.Box3())
+  const v = useRef(new THREE.Vector3())
+
+  useFrame((state) => {
+    const el = bubbleRef.current
+    const line = lineRef.current
+    if (!el || !line) return
+    const obj = registry.current.get(id)
+    if (!obj) return
+    box.current.setFromObject(obj)
+    if (box.current.isEmpty()) return
+
+    const { min, max } = box.current
+    const W = state.size.width
+    const H = state.size.height
+
+    // project the 8 corners of the piece's bounding box to the screen
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    for (let i = 0; i < 8; i++) {
+      v.current.set(
+        i & 1 ? max.x : min.x,
+        i & 2 ? max.y : min.y,
+        i & 4 ? max.z : min.z
+      )
+      v.current.project(state.camera)
+      const sx = (v.current.x * 0.5 + 0.5) * W
+      const sy = (-v.current.y * 0.5 + 0.5) * H
+      minX = Math.min(minX, sx)
+      maxX = Math.max(maxX, sx)
+      minY = Math.min(minY, sy)
+      maxY = Math.max(maxY, sy)
+    }
+
+    const w = el.offsetWidth
+    const h = el.offsetHeight
+    const gap = 28
+    const cy = (minY + maxY) / 2
+
+    // free space on each side (the left column and the right info panel take room)
+    const spaceRight = W - 360 - maxX
+    const spaceLeft = minX - 220
+    const placeRight = spaceRight >= w + gap || spaceRight >= spaceLeft
+
+    const bx = placeRight ? maxX + gap : minX - gap - w
+    const by = Math.max(80, Math.min(H - h - 80, cy - h / 2))
+
+    el.style.transform = `translate(${bx}px, ${by}px)`
+    el.style.opacity = '1'
+
+    // thin connector from the piece edge to the bubble edge
+    line.setAttribute('x1', String(placeRight ? maxX : minX))
+    line.setAttribute('y1', String(cy))
+    line.setAttribute('x2', String(placeRight ? bx : bx + w))
+    line.setAttribute('y2', String(by + h / 2))
+  })
+
+  return null
+}
+
 type PartMeshProps = {
   part: Part
   visible: boolean
@@ -566,6 +655,8 @@ export default function App() {
   const explodeRef = useRef(0)
   const searchRef = useRef<HTMLInputElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
+  const bubbleRef = useRef<HTMLDivElement>(null)
+  const lineRef = useRef<SVGLineElement>(null)
   const commandRef = useRef<((cmd: CamCmd) => void) | null>(null)
   const registry = useRef<Map<string, THREE.Object3D>>(new Map())
   const { loaded, total } = useProgress()
@@ -741,6 +832,10 @@ export default function App() {
   const setAll = (v: boolean) =>
     setOn(Object.fromEntries(SYSTEMS.map((s) => [s, v])))
 
+  const showBubble = selected !== null && isolated
+  const bubbleRegion = selected ? regionOf(selected) : null
+  const bubbleNote = selected ? NOTES[selected.id] : undefined
+
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#F3F3F1' }}>
       <Canvas
@@ -785,7 +880,82 @@ export default function App() {
           commandRef={commandRef}
           tool={tool}
         />
+        {showBubble && selected && (
+          <BubbleTracker
+            id={selected.id}
+            registry={registry}
+            bubbleRef={bubbleRef}
+            lineRef={lineRef}
+          />
+        )}
       </Canvas>
+
+      {/* Info bubble (only while a structure is isolated) */}
+      {showBubble && selected && (
+        <>
+          <svg
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          >
+            <line
+              ref={lineRef}
+              stroke="#13242D"
+              strokeOpacity={0.35}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+          </svg>
+          <div
+            ref={bubbleRef}
+            style={{
+              ...card,
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: 220,
+              padding: 12,
+              pointerEvents: 'none',
+              opacity: 0,
+              zIndex: 5,
+              lineHeight: 1.4,
+            }}
+          >
+            <div style={{ fontSize: 9, letterSpacing: 1.5, color: '#8a8f93' }}>
+              {(CATEGORY[selected.system] ?? 'Structure').toUpperCase()}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, margin: '4px 0 8px' }}>
+              {selected.name}
+            </div>
+            <div style={{ color: '#8a8f93', fontSize: 11 }}>
+              Side: <span style={{ color: '#13242D' }}>{sideOf(selected)}</span>
+              {bubbleRegion && (
+                <>
+                  {' · '}Region: <span style={{ color: '#13242D' }}>{bubbleRegion}</span>
+                </>
+              )}
+            </div>
+            {bubbleNote && (
+              <div
+                style={{
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: '1px solid rgba(0,0,0,0.06)',
+                  fontSize: 11,
+                }}
+              >
+                {bubbleNote}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Branding */}
       <div style={{ position: 'absolute', left: 24, top: 24, color: '#13242D' }}>
